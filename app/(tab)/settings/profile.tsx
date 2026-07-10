@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Alert,
@@ -7,12 +7,14 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { email, symbol, z } from "zod";
 import { theme } from "../../../styles/theme";
+import * as storage from "@/lib/storage";
 
 const profileSchema = z.object({
   firstName: z
@@ -36,10 +38,16 @@ const profileSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>;
 
 const Profile = () => {
+  const [isLoading, setIsLoading] = useState(true); // track loading state while we load saved profile data
+  const [isEditing, setIsEditing] = useState(false); // track wether we're in edit more or view mode
+  const [hasSavedData, setHasSavedData] = useState(false); // track if we have any saved data, to determine if we need to show the ancel button or not
+
   const {
     control,
     handleSubmit,
     formState: { errors, isValid },
+    reset, // a function to reset for values when canceling edit
+    watch, // a function that tracks form values for enabling, disabl=ing save button
   } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -52,11 +60,16 @@ const Profile = () => {
     mode: "onSubmit",
   });
 
-  const onSubmit = (data:ProfileForm)=>{
+  const watchedValues = watch()
+  // check if all fields have some valus.
+  // it will produce an array of all fied values, and it will check if the length is >0
+  //eg. ["jane","Smith", "", "A00123456", "4034034031"] -> false because email is empty
+
+  const onSubmit = (data: ProfileForm) => {
     Alert.alert("Profile Saved", "You profile has been updated", [
-        {text: "OK", onPress: ()=> router.back()}
-    ])
-  }
+      { text: "OK", onPress: () => router.back() },
+    ]);
+  };
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.h1}>Edit Profile</Text>
@@ -144,29 +157,30 @@ const Profile = () => {
 
       {/* Phone Number */}
 
-            <Text style={styles.label}>Phone Number</Text>
+      <Text style={styles.label}>Phone Number</Text>
       <Controller
-      control={control}
-      name='phone'
-      render={({field: {onChange, value}})=>(
-        <TextInput 
-        style={[styles.input, errors.phone && styles.inputError]}
-        placeholder="(403) 555-0123"
-        placeholderTextColor={theme.colors.muted}
-        value={value}
-        onChangeText={onChange}
-        autoCapitalize="none"
-        keyboardType="phone-pad"
-        />
-      )}
+        control={control}
+        name="phone"
+        render={({ field: { onChange, value } }) => (
+          <TextInput
+            style={[styles.input, errors.phone && styles.inputError]}
+            placeholder="(403) 555-0123"
+            placeholderTextColor={theme.colors.muted}
+            value={value}
+            onChangeText={onChange}
+            autoCapitalize="none"
+            keyboardType="phone-pad"
+          />
+        )}
       />
-      {errors.phone && <Text style={styles.error}> {errors.phone.message}</Text>}
+      {errors.phone && (
+        <Text style={styles.error}> {errors.phone.message}</Text>
+      )}
 
       {/* Submit Button */}
       <Pressable style={styles.button} onPress={handleSubmit(onSubmit)}>
         <Text style={styles.buttonText}>Save Profile</Text>
       </Pressable>
-
     </ScrollView>
   );
 };
