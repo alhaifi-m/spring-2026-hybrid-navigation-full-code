@@ -60,16 +60,94 @@ const Profile = () => {
     mode: "onSubmit",
   });
 
-  const watchedValues = watch()
+  const watchedValues = watch();
   // check if all fields have some valus.
   // it will produce an array of all fied values, and it will check if the length is >0
   //eg. ["jane","Smith", "", "A00123456", "4034034031"] -> false because email is empty
 
-  const onSubmit = (data: ProfileForm) => {
-    Alert.alert("Profile Saved", "You profile has been updated", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+  const isFormFilled = Object.values(watchedValues).every((v) => v.length > 0);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const saved = await storage.get<ProfileForm>(
+        storage.STORAGE_KEYS.PROFILE,
+      );
+      if (saved !== null) {
+        reset(saved);
+        setHasSavedData(true);
+      } else {
+        setIsEditing(true);
+      }
+      setIsLoading(false);
+    };
+    loadProfile();
+  }, []);
+
+  const onSubmit = async (data: ProfileForm) => {
+
+    await storage.set(storage.STORAGE_KEYS.PROFILE, data)
+    setHasSavedData(true)
+    setIsEditing(false)
   };
+
+  const handleCancel = async () => {
+    const saved = await storage.get<ProfileForm>(storage.STORAGE_KEYS.PROFILE);
+    if (saved !== null) {
+      reset(saved);
+    }
+    setIsEditing(false);
+  };
+
+  if (isLoading) {
+    return (
+      <view style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </view>
+    );
+  }
+
+  if (!isEditing) {
+    const values = watch();
+    return (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        <Text style={styles.h1}>My Profile</Text>
+        <View style={styles.profileCard}>
+          <View style={styles.profileRow}>
+            <Text style={styles.profileLabel}>First Name</Text>
+            <Text style={styles.profileValue}>{values.firstName}</Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.profileRow}>
+            <Text style={styles.profileLabel}>Last Name</Text>
+            <Text style={styles.profileValue}>{values.lastName}</Text>
+          </View>
+          <View style={styles.divider} />
+
+          <View style={styles.profileRow}>
+            <Text style={styles.profileLabel}>Email</Text>
+            <Text style={styles.profileValue}>{values.email}</Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.profileRow}>
+            <Text style={styles.profileLabel}>Phone Number</Text>
+            <Text style={styles.profileValue}>{values.phone}</Text>
+          </View>
+        </View>
+
+        <Pressable style={styles.button} onPress={() => setIsEditing(true)}>
+          <Text style={styles.buttonText}>Edit Profile</Text>
+        </Pressable>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.h1}>Edit Profile</Text>
@@ -177,10 +255,29 @@ const Profile = () => {
         <Text style={styles.error}> {errors.phone.message}</Text>
       )}
 
+      {hasSavedData ? (
+        <View style={styles.buttonRow}>
+          <Pressable style={styles.cancelButton} onPress={handleCancel}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.saveButton, !isFormFilled && styles.buttonDisabled]}
+            onPress={handleSubmit(onSubmit)}
+            disabled={!isFormFilled}
+          >
+            <Text style={styles.buttonText}>Save Profile</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable
+          style={[styles.button, !isFormFilled && styles.buttonDisabled]}
+          onPress={handleSubmit(onSubmit)}
+        >
+          <Text style={styles.buttonText}>Save Profile</Text>
+        </Pressable>
+      )}
+
       {/* Submit Button */}
-      <Pressable style={styles.button} onPress={handleSubmit(onSubmit)}>
-        <Text style={styles.buttonText}>Save Profile</Text>
-      </Pressable>
     </ScrollView>
   );
 };
@@ -236,5 +333,64 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "700",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: theme.colors.bg,
+  },
+  profileCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: "hidden",
+  },
+  profileRow: {
+    padding: 16,
+  },
+  profileLabel: {
+    fontSize: 13,
+    color: theme.colors.muted,
+    marginBottom: 4,
+  },
+  profileValue: {
+    fontSize: 16,
+    color: theme.colors.muted,
+    fontWeight: "500",
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: theme.colors.border,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 28,
+  },
+  cancelButton: {
+    flex: 1,
+    borderRadius: theme.radius.input,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+  },
+  cancelButtonText: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.input,
+    padding: 16,
+    alignItems: "center",
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
 });
