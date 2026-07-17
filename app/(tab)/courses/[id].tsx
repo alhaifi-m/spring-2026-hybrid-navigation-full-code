@@ -16,7 +16,11 @@ export default function CourseDetails() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: theme.spacing.screen, backgroundColor: theme.colors.bg },
+  container: {
+    flex: 1,
+    padding: theme.spacing.screen,
+    backgroundColor: theme.colors.bg,
+  },
   h1: { fontSize: 22, fontWeight: "800", color: theme.colors.text },
   p: { marginTop: 10, color: theme.colors.muted },
   code: {
