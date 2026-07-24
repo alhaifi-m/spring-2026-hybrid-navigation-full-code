@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +10,8 @@ import {
   TextInput,
   ActivityIndicator,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -41,7 +44,7 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true); // track loading state while we load saved profile data
   const [isEditing, setIsEditing] = useState(false); // track wether we're in edit more or view mode
   const [hasSavedData, setHasSavedData] = useState(false); // track if we have any saved data, to determine if we need to show the ancel button or not
-
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const {
     control,
     handleSubmit,
@@ -78,18 +81,79 @@ const Profile = () => {
       } else {
         setIsEditing(true);
       }
+
+      const savedPhoto = await storage.get<string>(
+        storage.STORAGE_KEYS.PROFILE_PHOTO,
+      );
+      if (savedPhoto !== null) {
+        setPhotoUri(savedPhoto);
+      }
       setIsLoading(false);
     };
     loadProfile();
   }, []);
 
   const onSubmit = async (data: ProfileForm) => {
-
-    await storage.set(storage.STORAGE_KEYS.PROFILE, data)
-    setHasSavedData(true)
-    setIsEditing(false)
+    await storage.set(storage.STORAGE_KEYS.PROFILE, data);
+    setHasSavedData(true);
+    setIsEditing(false);
   };
 
+  // Show an action sheet-style alert to choose camera or library
+  const handlePhotoPress = () => {
+    Alert.alert("Profile Photo", "Choose a source", [
+      { text: "Take Photo", onPress: () => openPicker("camera") },
+      { text: "Choose from Library", onPress: () => openPicker("library") },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+  const openPicker = async (source: "camera" | "library") => {
+    //Step 1: Request the appropriate permission
+    if (source === "camera") {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "Camera Access is required to take a profile photo.  Enable in setting",
+        );
+        return;
+      }
+    } else {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "Photo library access is required to choose a profile photo. Enable in Settings",
+        );
+        return;
+      }
+    }
+
+    // Step 2: Launch the Picker
+
+    const result =
+      source === "camera"
+        ? await ImagePicker.launchCameraAsync({
+            mediaTypes: "images",
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: "images",
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+          });
+
+    // Step 3: Save the URI if the user didn't cancel
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setPhotoUri(uri);
+      await storage.set(storage.STORAGE_KEYS.PROFILE_PHOTO, uri);
+    }
+  };
   const handleCancel = async () => {
     const saved = await storage.get<ProfileForm>(storage.STORAGE_KEYS.PROFILE);
     if (saved !== null) {
@@ -98,11 +162,38 @@ const Profile = () => {
     setIsEditing(false);
   };
 
+  const renderAvatar = () => (
+    <View style={styles.avatarSection}>
+      <Pressable onPress={handlePhotoPress} style={styles.avatarContainer}>
+        {photoUri ? (
+          <Image source={{ uri: photoUri }} style={styles.avatar} />
+        ) : (
+          // Placeholder if no image
+          <View style={styles.avatarPlaceholder}>
+            <Ionicons
+              name="person-outline"
+              size={44}
+              color={theme.colors.muted}
+            />
+          </View>
+          // Camera Overlay
+        )}
+
+        <View style={styles.cameraBadge}>
+          <Ionicons name="camera" size={44} color="#fff" />
+        </View>
+      </Pressable>
+      <Text style={styles.photoHint}>
+        {photoUri? "Tap to change Photo": "Tap to Add Photo"}
+      </Text>
+    </View>
+  );
+
   if (isLoading) {
     return (
-      <view style={styles.loadingContainer}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-      </view>
+      </View>
     );
   }
 
@@ -114,6 +205,7 @@ const Profile = () => {
         contentContainerStyle={styles.content}
       >
         <Text style={styles.h1}>My Profile</Text>
+        {renderAvatar()}
         <View style={styles.profileCard}>
           <View style={styles.profileRow}>
             <Text style={styles.profileLabel}>First Name</Text>
@@ -151,6 +243,8 @@ const Profile = () => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.h1}>Edit Profile</Text>
+
+      {renderAvatar()}
 
       {/* First Name */}
       <Text style={styles.label}>First Name</Text>
@@ -393,4 +487,48 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.5,
   },
+  // ── Avatar styles (Week 11) ──────────────────────────────
+  avatarSection: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  avatarContainer: {
+    position: "relative",
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: theme.colors.border,
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: theme.colors.card,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cameraBadge: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: theme.colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: theme.colors.bg,
+  },
+  photoHint: {
+    marginTop: 8,
+    fontSize: 13,
+    color: theme.colors.muted,
+  },
+
 });

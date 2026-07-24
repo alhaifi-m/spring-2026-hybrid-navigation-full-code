@@ -38,6 +38,20 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+        [
+        "expo-image-picker",
+        {
+          "photosPermission": "Campus Hub accesses your photo library so you can choose a profile photo.", // allow access to photo library for profile photo
+          "cameraPermission": "Campus Hub uses your camera so you can take a profile photo.", // allow camera access for profile photo
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Campus Hub uses your location to show where you are on the campus map." // allow access to location for campus map
+        }
       ]
     ],
     "experiments": {
