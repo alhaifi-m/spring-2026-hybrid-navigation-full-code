@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "full-navigation",
-    "slug": "full-navigation",
+    "name": "Campus Hub",
+    "slug": "campus-hub",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Campus Hub uses your camera so you can take a profile photo.",
+        "NSPhotoLibraryUsageDescription": "Campus Hub accesses your photo library so you can choose a profile photo.",
+        "NSLocationWhenInUseUsageDescription": "Campus Hub uses your location to show where you are on the campus map."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +24,14 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -39,20 +51,22 @@
           }
         }
       ],
-        [
+      [
         "expo-image-picker",
         {
-          "photosPermission": "Campus Hub accesses your photo library so you can choose a profile photo.", // allow access to photo library for profile photo
-          "cameraPermission": "Campus Hub uses your camera so you can take a profile photo.", // allow camera access for profile photo
+          "photosPermission": "Campus Hub accesses your photo library so you can choose a profile photo.",
+          "cameraPermission": "Campus Hub uses your camera so you can take a profile photo.",
           "microphonePermission": false
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Campus Hub uses your location to show where you are on the campus map." // allow access to location for campus map
+          "locationWhenInUsePermission": "Campus Hub uses your location to show where you are on the campus map."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
