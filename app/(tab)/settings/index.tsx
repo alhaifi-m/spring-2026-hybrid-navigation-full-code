@@ -5,10 +5,12 @@ import AppCard from "../../../components/AppCard";
 import { theme } from "../../../styles/theme";
 import {router} from 'expo-router'
 import * as storage from "@/lib/storage"
+import { useAuth } from "@/context/AuthContext";
 
 export default function Settings() {
   const [notifications, setNotifications] = useState(true);
   const [isLoading, setIsLoading] = useState(true)
+  const {signOut} = useAuth()
 
   // Load saved notification preference on mount
 
@@ -32,7 +34,9 @@ export default function Settings() {
     setNotifications(value)
     await storage.set(storage.STORAGE_KEYS.NOTIFICATIONS, value)
   }
-
+const handleSignOut = async () =>{
+  await signOut()
+}
   if(isLoading){
     // Show a loading indicator while we load the saved preference
     return(
@@ -65,6 +69,20 @@ export default function Settings() {
             />
           }
         />
+      </Pressable>
+      <Pressable onPress={handleSignOut}>
+        <AppCard
+        title="Sign Out"
+        subtitle="Sign Out of your Account"
+        right={
+          <Ionicons 
+          name="log-out-outline"
+          size={20}
+          color={theme.colors.error}
+          />
+        }
+        />
+
       </Pressable>
     </View>
   );
